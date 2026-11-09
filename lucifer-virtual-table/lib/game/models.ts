@@ -1,0 +1,11 @@
+import type {Token} from './types';
+export const MODELS=[{id:'archer',name:'Лучник',height:1.65},{id:'knight',name:'Воин / паладин',height:1.65},{id:'barbarian',name:'Варвар',height:1.7},{id:'mage',name:'Маг',height:1.65},{id:'rogue-hooded',name:'Плут в капюшоне',height:1.65},{id:'priestess',name:'Жрица',height:1.65},{id:'fairygodmother',name:'Друид / фея',height:1.65},{id:'courtjester',name:'Бард',height:1.65},{id:'scout',name:'Монах / разведчик',height:1.65},{id:'skeleton-warrior',name:'Скелет-воин',height:1.7},{id:'skeleton-mage',name:'Скелет-маг',height:1.7},{id:'skeleton-rogue',name:'Скелет-разбойник',height:1.7},{id:'orcironguard',name:'Орк',height:1.9},{id:'orcwarshaman',name:'Орк-шаман',height:1.9},{id:'werewolfcaptain',name:'Оборотень',height:1.85},{id:'demon',name:'Демон',height:2.1},{id:'ghost',name:'Призрак',height:1.5},{id:'bat',name:'Летучая мышь',height:.65},{id:'boar',name:'Кабан',height:.8},{id:'rat',name:'Крыса',height:.4},{id:'lion',name:'Лев',height:1},{id:'tiger',name:'Тигр',height:1}] as const;
+export type ModelId=typeof MODELS[number]['id'];
+export function modelForToken(token:Token):ModelId|null{
+ if(token.modelId==='token')return null;if(MODELS.some(m=>m.id===token.modelId))return token.modelId as ModelId;
+ const id=token.monsterId??'';
+ if(id){if(/skeleton|zombie/.test(id))return 'skeleton-warrior';if(/ghost|specter|wraith/.test(id))return 'ghost';if(/demon|devil|balor|fiend/.test(id))return 'demon';if(/werewolf|wolf|worg/.test(id))return 'werewolfcaptain';if(/orc|goblin|hobgoblin|ogre|troll/.test(id))return 'orcironguard';if(/bat/.test(id))return 'bat';if(/boar/.test(id))return 'boar';if(/rat/.test(id))return 'rat';if(/lion|panther/.test(id))return 'lion';if(/tiger|saber/.test(id))return 'tiger';return 'demon';}
+ if(token.faction==='hostile'||token.portrait==='enemy')return 'orcironguard';
+ const classes:Record<string,ModelId>={ranger:'archer',fighter:'knight',paladin:'knight',barbarian:'barbarian',rogue:'rogue-hooded',wizard:'mage',sorcerer:'mage',warlock:'mage',cleric:'priestess',druid:'fairygodmother',monk:'scout',bard:'courtjester'};
+ return classes[token.classId??'']??(token.portrait==='ranger'?'archer':token.portrait==='mage'?'mage':'knight');
+}

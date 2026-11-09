@@ -1,0 +1,15 @@
+import 'server-only';
+import {cookies} from 'next/headers';
+import {randomBytes,scrypt as nodeScrypt,timingSafeEqual,createHash} from 'node:crypto';
+
+import {getPool} from './postgres';
+const scrypt=(password:string,salt:string)=>new Promise<Buffer>((resolve,reject)=>nodeScrypt(password,salt,64,{N:32768,r:8,p:1,maxmem:64*1024*1024},(error,key)=>error?reject(error):resolve(key)));
+const SESSION='lvt_session',week=7*86400000;
+export type CurrentUser={userId:string;displayName:string;email:string;fullName:string|null};
+export const digest=(value:string)=>createHash('sha256').update(value).digest('hex');
+export async function hashPassword(password:string){const salt=randomBytes(24).toString('hex');const hash=await scrypt(password,salt);return 'scrypt-v1:'+salt+':'+hash.toString('hex');}
+export async function verifyPassword(password:string,encoded:string){const [version,salt,hex]=encoded.split(':');if(version!=='scrypt-v1'||!salt||!hex)return false;const hash=await scrypt(password,salt);const saved=Buffer.from(hex,'hex');return hash.length===saved.length&&timingSafeEqual(hash,saved);}
+export async function getCurrentUser():Promise<CurrentUser|null>{const token=(await cookies()).get(SESSION)?.value;if(!token||token.length!==64)return null;const {rows}=await getPool().query('SELECT a.id,a.email,p.name FROM sessions s JOIN accounts a ON a.id=s.user_id JOIN profiles p ON p.user_id=a.id WHERE s.token_hash=$1 AND s.expires_at>$2',[digest(token),Date.now()]);const u=rows[0];return u?{userId:u.id,displayName:u.name,email:u.email,fullName:u.name}:null;}
+export async function startSession(userId:string){const token=randomBytes(32).toString('hex'),now=Date.now();await getPool().query('DELETE FROM sessions WHERE expires_at<$1',[now]);await getPool().query('INSERT INTO sessions(token_hash,user_id,expires_at,created_at) VALUES($1,$2,$3,$4)',[digest(token),userId,now+week,now]);(await cookies()).set(SESSION,token,{httpOnly:true,secure:process.env.AUTH_SECURE_COOKIE==='true'||(process.env.NODE_ENV==='production'&&process.env.AUTH_SECURE_COOKIE!=='false'),sameSite:'lax',path:'/',maxAge:week/1000});}
+export async function endSession(){const jar=await cookies(),token=jar.get(SESSION)?.value;if(token)await getPool().query('DELETE FROM sessions WHERE token_hash=$1',[digest(token)]);jar.delete(SESSION);}
+export async function rateLimit(key:string,limit:number,period:number){const client=await getPool().connect();try{await client.query('BEGIN');await client.query('SELECT pg_advisory_xact_lock(hashtext($1))',[key]);const count=await client.query('SELECT COUNT(*) as n FROM auth_attempts WHERE key=$1 AND created_at>$2',[key,Date.now()-period]);if(Number(count.rows[0].n)>=limit)throw new Error('Слишком много попыток. Попробуйте позднее.');await client.query('INSERT INTO auth_attempts(key,created_at) VALUES($1,$2)',[key,Date.now()]);await client.query('DELETE FROM auth_attempts WHERE created_at<$1',[Date.now()-86400000]);await client.query('COMMIT');}catch(e){await client.query('ROLLBACK');throw e;}finally{client.release();}}

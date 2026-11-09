@@ -1,0 +1,12 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {blankMap,compileMapWalls,mapDocumentSchema,type MapElement} from '../lib/game/map-document';
+import {applyCommand} from '../lib/game/commands';
+import {createSeed} from '../lib/game/seed';
+import {lineOfSight,segmentClear} from '../lib/game/vision';
+const gm={userId:'gm',name:'GM',role:'gm' as const};
+const room:MapElement={id:'room',layerId:'rooms',kind:'room',x:300,y:300,w:600,h:420,rotation:0,shape:'rect',material:'stone',label:'',color:'#dddddd',solid:true,open:false};
+const door:MapElement={...room,id:'door',kind:'door',x:570,y:291,w:60,h:18,solid:false};
+test('a door cuts a real opening in a room perimeter and toggles both artwork and collision',()=>{const doc=blankMap();doc.elements=[room,door];assert.ok(mapDocumentSchema.safeParse(doc).success);let s=createSeed();s.scenes[0].walls=[];s=applyCommand(s,{type:'map.save',map:doc},gm);const scene=s.scenes[0];assert.equal(compileMapWalls(doc).length,6);assert.ok(!lineOfSight(scene,{x:600,y:250},{x:600,y:350}));s=applyCommand(s,{type:'wall.toggle',id:'door'},gm);assert.ok(lineOfSight(s.scenes[0],{x:600,y:250},{x:600,y:350}));assert.ok(segmentClear(s.scenes[0],{x:600,y:250},{x:600,y:350},'movement'));assert.equal(s.scenes[0].mapData!.elements[1].open,true);});
+test('windows permit vision while blocking movement, and invisible layers do not add geometry',()=>{const doc=blankMap();doc.elements=[room,{...door,id:'window',kind:'window'}];const scene=createSeed().scenes[0];scene.walls=compileMapWalls(doc);assert.ok(lineOfSight(scene,{x:600,y:250},{x:600,y:350}));assert.ok(!segmentClear(scene,{x:600,y:250},{x:600,y:350},'movement'));doc.layers.find(l=>l.id==='rooms')!.visible=false;assert.equal(compileMapWalls(doc).length,0);});
+test('map data is validated, cannot contain scripts and can be saved only by the GM',()=>{const doc=blankMap();doc.elements=[room];assert.throws(()=>applyCommand(createSeed(),{type:'map.save',map:doc},{...gm,role:'player'}),/ведущему/);assert.ok(!mapDocumentSchema.safeParse({...doc,background:'url(javascript:alert(1))'}).success);assert.ok(!mapDocumentSchema.safeParse({...doc,elements:[room,room]}).success);assert.ok(!mapDocumentSchema.safeParse({...doc,elements:[{...room,layerId:'missing'}]}).success);});

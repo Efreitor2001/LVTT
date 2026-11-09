@@ -1,0 +1,22 @@
+Kay Lousberg
+https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0
+CC0-1.0
+
+
+Kay Lousberg
+https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0
+CC0-1.0
+
+
+Gobkit / Alsomind Tech Co., Ltd.
+https://gobkit.com/api/free
+CC0 1.0 (public domain) - free for any use, commercial or personal, no attribution required.
+
+
+Quaternius
+https://quaternius.com/packs/ultimatemonsters.html
+CC0-1.0
+Original CC0 release confirmed on pack page and creator October 2022 announcement. GLB conversions mirrored with provenance in ASSETS.md; public Drive download was quota limited.
+
+Creative Commons CC0 1.0: https://creativecommons.org/publicdomain/zero/1.0/
+Full pinned download URLs and SHA-256 hashes: /models/manifest.json

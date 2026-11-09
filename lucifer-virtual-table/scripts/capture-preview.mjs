@@ -1,0 +1,17 @@
+import {chromium} from '@playwright/test';
+import {mkdirSync} from 'node:fs';
+mkdirSync('outputs',{recursive:true});
+const browser=await chromium.launch({channel:'msedge',headless:true,args:['--enable-unsafe-swiftshader']});
+const page=await browser.newPage({viewport:{width:1600,height:1000}});
+page.on('pageerror',e=>console.log('PAGEERROR',e.message));
+await page.goto('http://127.0.0.1:5173/',{waitUntil:'networkidle'});
+await page.screenshot({path:'outputs/table-desktop.png',fullPage:true});
+await page.getByRole('button',{name:'Бросить',exact:true}).click();
+await page.locator('.dice-stage canvas').waitFor({timeout:15000});
+await page.waitForTimeout(2200);
+await page.screenshot({path:'outputs/dice-physics.png'});
+await page.getByRole('button',{name:'Пропустить анимацию'}).click();
+await page.setViewportSize({width:390,height:844});
+await page.screenshot({path:'outputs/table-mobile.png',fullPage:true});
+await browser.close();
+console.log('Screenshots captured.');

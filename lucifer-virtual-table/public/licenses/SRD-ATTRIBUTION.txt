@@ -1,0 +1,15 @@
+Lucifer Virtual Table includes material from the System Reference Document 5.1,
+by Wizards of the Coast LLC.
+Original: https://media.dndbeyond.com/compendium-images/srd/5.1/SRD_CC_v5.1.pdf
+License: Creative Commons Attribution 4.0 International
+https://creativecommons.org/licenses/by/4.0/
+
+Structured source: 5e-bits / 5e-srd-api, revision
+dff09cc6f6764734d20fdba65a07a041613697ca
+https://github.com/5e-bits/5e-srd-api
+The repository's MIT license is reproduced in 5e-bits-LICENSE.md.
+
+Changes by Lucifer Virtual Table: JSON normalization, selected Russian display
+labels, conversion to map units, and implementation of executable game actions.
+Source descriptions are retained in English. No source illustrations are copied.
+This is an independent virtual tabletop, not an official Wizards of the Coast product.

@@ -1,0 +1,64 @@
+import {test,expect} from '@playwright/test';
+test('demo table: dice physics, formulas, character sheet and combat',async({page})=>{
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('/');await page.locator('.app-shell[data-ready="true"]').waitFor();await expect(page.getByRole('heading',{name:/Затонувший храм/})).toBeVisible();
+ await page.getByRole('textbox',{name:'Формула броска'}).fill('4d6dl1+2');
+ await page.getByRole('button',{name:'Бросить',exact:true}).click();
+ await expect(page.getByRole('dialog',{name:'Бросок костей'})).toBeVisible();
+ await expect(page.locator('.dice-stage canvas')).toBeVisible({timeout:20000});
+ await expect(page.locator('.dice-outcome.visible')).toBeVisible({timeout:15000});
+ await expect(page.locator('.dice-outcome.visible')).toContainText('4d6dl1+2');
+ await page.screenshot({path:'outputs/dice-settled.png'});
+ await page.getByRole('button',{name:'Продолжить игру',exact:true}).click();
+ await expect(page.locator('.roll-card')).toHaveCount(1);
+ await page.getByRole('tab',{name:'Герои',exact:true}).click();
+ await page.locator('.character-card').filter({hasText:'Эйлин'}).click();
+ await page.getByLabel('Здоровье',{exact:true}).fill('17');
+ await page.getByRole('button',{name:'Сохранить',exact:true}).click();
+ await expect(page.locator('.character-card').filter({hasText:'Эйлин'})).toContainText('17 / 28');
+ await page.getByRole('tab',{name:'Бой',exact:true}).click();
+ await page.getByRole('button',{name:'Начать бой',exact:true}).click();
+ await expect(page.locator('.combatant.active')).toContainText('Эйлин');
+ await page.getByRole('button',{name:'Следующий ход',exact:true}).click();
+ await expect(page.locator('.combatant.active')).toContainText('Торин');
+ await page.getByRole('button',{name:'Библиотека костей',exact:true}).click();
+ await page.getByRole('button',{name:'Успехи и провалы'}).click();
+ await expect(page.getByRole('textbox',{name:'Формула броска'})).toHaveValue('8d10cs>=8cf=1');
+ expect(errors).toEqual([]);
+});
+test('mobile layout fits viewport and exposes account entry',async({page})=>{
+ await page.setViewportSize({width:390,height:844});await page.goto('/');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+ await page.getByRole('link',{name:'Личный кабинет',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Миры меняются. Ваши истории остаются.'})).toBeVisible();
+});
+test('authenticated account, persistent campaign, version conflicts, files and private rolls',async({page,request})=>{
+ const registered=await page.request.post('/api/auth/register',{data:{email:'browser-'+crypto.randomUUID()+'@example.test',password:'VTT-browser-test-strong-password',name:'Тестовый ведущий'}});expect(registered.status()).toBe(201);
+ await page.goto('/account');
+ await expect(page.getByRole('heading',{name:'Следующая история ждёт.'})).toBeVisible();
+ await page.getByRole('button',{name:'Профиль и настройки'}).click();
+ await page.getByLabel('Имя за столом').fill('Хранитель историй');
+ await page.getByRole('button',{name:'Сохранить изменения'}).click();
+ await expect(page.getByRole('status')).toContainText('сохранены');
+ await page.reload();await expect(page.getByRole('heading',{name:'Хранитель историй',exact:true})).toBeVisible();
+ const created=await page.request.post('/api/worlds',{data:{title:'Проверка VTT '+Date.now()}});expect(created.status()).toBe(201);const {id}=await created.json();
+ try{
+  await page.goto('/account');await page.locator('.account-world').waitFor();await page.screenshot({path:'outputs/account-desktop.png',fullPage:true});
+  await page.goto('/?world='+id);await expect(page.locator('.connection')).toContainText('сохранены');
+  const world=(await (await page.request.get('/api/worlds/'+id)).json());
+  const patch=await page.request.post('/api/worlds/'+id+'/command',{data:{version:world.version,command:{type:'token.update',id:'aelin',patch:{hp:11}}}});expect(patch.status()).toBe(200);
+  const conflict=await page.request.post('/api/worlds/'+id+'/command',{data:{version:world.version,command:{type:'pause'}}});expect(conflict.status()).toBe(409);
+  const eventId=crypto.randomUUID();const rolled=await page.request.post('/api/worlds/'+id+'/events',{data:{id:eventId,kind:'roll',formula:'3d24',visibility:'gm'}});expect(rolled.status()).toBe(201);
+  const again=await page.request.post('/api/worlds/'+id+'/events',{data:{id:eventId,kind:'roll',formula:'3d24',visibility:'gm'}});expect(again.status()).toBe(200);
+  const invalid=await page.request.post('/api/worlds/'+id+'/events',{data:{id:crypto.randomUUID(),kind:'roll',formula:'1d6;alert(1)'}});expect(invalid.status()).toBe(400);
+  const csrf=await page.request.post('/api/worlds/'+id+'/command',{headers:{Origin:'https://evil.example'},data:{version:world.version+1,command:{type:'pause'}}});expect(csrf.status()).toBe(403);
+  const unauth=await request.get('/api/worlds/'+id);expect(unauth.status()).toBe(401);
+  const invite=await page.request.post('/api/worlds/'+id+'/invite',{data:{}});expect(invite.status()).toBe(200);expect((await invite.json()).token.length).toBeGreaterThan(32);
+  const invalidFile=await page.request.post('/api/worlds/'+id+'/upload',{headers:{'Content-Type':'image/png'},data:'fake PNG'});expect(invalidFile.status()).toBe(400);
+  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jD0YAAAAASUVORK5CYII=','base64');
+  const uploaded=await page.request.post('/api/worlds/'+id+'/upload',{headers:{'Content-Type':'image/png'},data:png});expect(uploaded.status()).toBe(201);
+  const asset=(await uploaded.json()).url;expect((await page.request.get(asset)).status()).toBe(200);expect((await request.get(asset)).status()).toBe(401);
+  await page.reload();await page.getByRole('tab',{name:'Герои',exact:true}).click();await expect(page.locator('.character-card').filter({hasText:'Эйлин'})).toContainText('11 / 28');
+  const snapshot=await (await page.request.get('/api/worlds/'+id)).json();expect(snapshot.events.filter((e:{id:string})=>e.id===eventId)).toHaveLength(1);
+ } finally{expect((await page.request.delete('/api/worlds/'+id)).status()).toBe(200);}
+});

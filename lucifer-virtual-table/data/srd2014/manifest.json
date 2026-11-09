@@ -1,0 +1,62 @@
+{
+  "edition": "D&D 5e SRD 2014",
+  "revision": "dff09cc6f6764734d20fdba65a07a041613697ca",
+  "source": "https://github.com/5e-bits/5e-srd-api",
+  "files": [
+    {
+      "name": "Monsters",
+      "count": 334,
+      "sha256": "6f8383f66701a9a59633f40151635b5c425dfddb8654cf7d4526d4d58bdcc18f"
+    },
+    {
+      "name": "Spells",
+      "count": 319,
+      "sha256": "6c6f7ea8b6b3ac67039785790915b632e0822134ce0495359468c80ac8b8fbe6"
+    },
+    {
+      "name": "Races",
+      "count": 9,
+      "sha256": "7edd2da5a92f3642f26bc959df80240ddd91519ac00030fdb83a36c36b1a8511"
+    },
+    {
+      "name": "Subraces",
+      "count": 4,
+      "sha256": "9031394294a1a8e44b37952bdab5bcb62b0919688b850cee4b2c007a9940755b"
+    },
+    {
+      "name": "Classes",
+      "count": 12,
+      "sha256": "e918af7ef01a45b0c38d2ab4e4537c0d7da49c8d0dbc79d6477424a5d16d19f3"
+    },
+    {
+      "name": "Subclasses",
+      "count": 12,
+      "sha256": "65a329f552722ec4b4e1e9d9f19166706b8ac15e231fc47699a7655248d37aa4"
+    },
+    {
+      "name": "Traits",
+      "count": 38,
+      "sha256": "da3f60e493dd6c1e27b555248355d75e3205711cb0c510789de3bcba747db52b"
+    },
+    {
+      "name": "Features",
+      "count": 407,
+      "sha256": "381b38e14cb3da0c41200e5773348c523d6d3143dd732c9f1ddcf886938ab55e"
+    },
+    {
+      "name": "Conditions",
+      "count": 15,
+      "sha256": "d69eee05cc3ebf67644e8ff3f4dd1ae724f89138c41ddaf94ed192362759711e"
+    },
+    {
+      "name": "Equipment",
+      "count": 237,
+      "sha256": "8d6255ecae372ee4b7e89ad64fc851eedcfa94918b09581a61db54467d8164da"
+    },
+    {
+      "name": "Levels",
+      "count": 290,
+      "sha256": "c79c7b6196b9a00b84738c4f3cabf606fba7c3700e7c99434d48ca49bd49181b"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+import type {MapDocument} from './map-document';
+export type DieFace = { label: string; value: number; symbols?: Record<string, number> };
+export type CustomDie = { id: string; name: string; faces: DieFace[] };
+export type SystemProfile = { id: string; name: string; subtitle: string; formula: string; attributes: string[]; dice: CustomDie[]; cancellations: [string, string][] };
+export type Token = {modelId?:string; id: string; name: string; x: number; y: number; color: string; portrait: string; hp: number; maxHp: number; armor: number; initiative: number; hidden: boolean; ownerId: string | null; attributes: Record<string, number>; conditions: string[]; notes: string;traits?:string[];speed?:number;vision?:number;faction?:'party'|'hostile'|'neutral';level?:number;species?:string;classId?:string;monsterId?:string;abilities?:string[];spellSlots?:Record<string,number>;attackBonus?:number;spellAttackBonus?:number;attackRange?:number;damage?:string;saveDC?:number;saves?:Record<string,number>;resistances?:string[];immunities?:string[];vulnerabilities?:string[];concentration?:string|null;tempHp?:number;statusEffects?:{id:string;condition:string;sourceId:string;rounds:number;concentration:boolean;saveAbility?:string;saveDC?:number}[];shieldUntilTurn?:boolean };
+export type Drawing = { id: string; kind: 'line' | 'circle' | 'fog' | 'reveal'; x: number; y: number; x2: number; y2: number; color: string };
+export type Scene = {mapData?:MapDocument; id: string; name: string; subtitle: string; map: string; grid: 'square' | 'hex' | 'none'; gridSize: number; distance: number; unit: string; fog: boolean; tokens: Token[]; drawings: Drawing[];visionMode?:'shared'|'owned'|'manual';walls?:import('./combat-types').Wall[] };
+export type Journal = { id: string; title: string; body: string; public: boolean };
+export type Macro = { id: string; name: string; formula: string };
+export type WorldState = { system: SystemProfile; activeScene: string; scenes: Scene[]; journal: Journal[]; macros: Macro[]; combat: { active: boolean; round: number; turn: number; order: string[];movement?:Record<string,number>;actions?:Record<string,boolean>;bonus?:Record<string,boolean>;reactions?:Record<string,boolean>;dash?:Record<string,number>;attacksRemaining?:Record<string,number>;effects?:import('./combat-types').CombatEffect[];currentTokenId?:string|null }; paused: boolean; ambience: string };
+export type Member = { userId: string; name: string; role: 'gm' | 'player'; lastSeen?: number };
+export type World = { id: string; title: string; version: number; state: WorldState; role: 'gm' | 'player'; members: Member[] };
+export type RollItem = { value: number; label: string; dropped?: boolean; exploded?: boolean; rerolled?: boolean; symbols?: Record<string, number> };
+export type RollGroup = { notation: string; items: RollItem[]; total: number; successes: boolean };
+export type RollResult = { formula: string; total: number; groups: RollGroup[]; symbols: Record<string, number> };
+export type GameEvent = { id: string; userId: string; name: string; kind: 'chat' | 'roll' | 'system' | 'ping'; visibility: 'all' | 'gm'; data: { text?: string; roll?: RollResult; x?: number; y?: number }; createdAt: number };
+export type Command = { type: string; [key: string]: unknown };

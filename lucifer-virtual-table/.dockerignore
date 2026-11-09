@@ -1,0 +1,14 @@
+node_modules
+.next
+dist
+var
+.git
+.wrangler
+.vinext
+.sites-runtime
+outputs
+.env*
+!.env.example
+
+secrets/
+.env.production
